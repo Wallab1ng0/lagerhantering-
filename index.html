@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lagerhantering & Inköp</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+        }
+
+        header {
+            background-color: #333;
+            color: white;
+            padding: 1rem 0;
+            text-align: center;
+        }
+
+        nav {
+            display: flex;
+            justify-content: center;
+            background-color: #555;
+            padding: 0.5rem 0;
+        }
+
+            nav a {
+                color: white;
+                margin: 0 15px;
+                text-decoration: none;
+            }
+
+                nav a:hover {
+                    text-decoration: underline;
+                }
+
+        .container {
+            margin: 20px auto;
+            max-width: 1200px;
+            padding: 0 15px;
+        }
+
+        .stats, .chart-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 40px;
+        }
+
+        .stat-box {
+            flex: 1 1 calc(33.333% - 20px);
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+            .stat-box h3 {
+                margin: 0 0 10px;
+                font-size: 1.2rem;
+                color: #333;
+            }
+
+            .stat-box input {
+                width: 100%;
+                padding: 10px;
+                font-size: 1.2rem;
+                margin-top: 5px;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                text-align: center;
+            }
+
+        canvas {
+            background-color: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+
+        button {
+            background-color: #333;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            cursor: pointer;
+            border-radius: 5px;
+            margin-top: 20px;
+            margin-right: 10px;
+        }
+
+            button:hover {
+                background-color: #555;
+            }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Lagerhantering & Inköp</h1>
+        <p>Effektiv hantering av lager och inköp för företag</p>
+    </header>
+
+    <nav>
+        <a href="#stats">Statistik</a>
+        <a href="#charts">Visualisering</a>
+        <a href="#contact">Kontakt</a>
+    </nav>
+
+    <div class="container">
+        <section id="stats" class="stats">
+            <div class="stat-box">
+                <h3>Årsförbrukning</h3>
+                <input type="number" id="annualConsumption" value="320000">
+            </div>
+            <div class="stat-box">
+                <h3>Orderkvantitet</h3>
+                <input type="number" id="orderQuantity" value="55000">
+            </div>
+            <div class="stat-box">
+                <h3>Säkerhetslager</h3>
+                <input type="number" id="safetyStock" value="20000">
+            </div>
+            <div class="stat-box">
+                <h3>Påfyllningskostnad</h3>
+                <input type="number" id="restockCost" value="875">
+            </div>
+            <div class="stat-box">
+                <h3>Värde per vara</h3>
+                <input type="number" id="valuePerItem" value="95">
+            </div>
+            <div class="stat-box">
+                <h3>Lager ränta (%)</h3>
+                <input type="number" id="storageInterest" value="13">
+            </div>
+            <div class="stat-box">
+                <h3>Produktionsdagar</h3>
+                <input type="number" id="productionDays" value="230">
+            </div>
+            <div class="stat-box">
+                <h3>Leveranstid (dagar)</h3>
+                <input type="number" id="deliveryTime" value="15">
+            </div>
+            <div class="stat-box">
+                <h3>Lagerränta</h3>
+                <input type="number" id="storageCost" value="0" readonly>
+            </div>
+            <div class="stat-box">
+                <h3>Beställningspunkt</h3>
+                <input type="number" id="orderPoint" value="0" readonly>
+            </div>
+            <div class="stat-box">
+                <h3>Dagar till nästa inköp</h3>
+                <input type="number" id="daysToNextOrder" value="0" readonly>
+            </div>
+            <div class="stat-box">
+                <h3>Wilson Formeln (EOQ)</h3>
+                <input type="number" id="wilsonFormula" value="0" readonly>
+            </div>
+        </section>
+
+        <div style="text-align: center;">
+            <button onclick="calculateValues()">Beräkna</button>
+        </div>
+
+        <div id="charts" class="chart-container">
+            <h3>Lagersaldo Diagram</h3>
+            <canvas id="inventoryChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+
+    <footer id="contact" style="background-color: #333; color: white; text-align: center; padding: 20px;">
+        <p>Kontakta oss på info@lagerhantering.com | Telefon: 012-3456789</p>
+        <p>&copy; 2024 Lagerhantering & Inköp AB</p>
+    </footer>
+
+    <script>
+        let inventoryChart; // Global variabel för att hålla referensen till diagrammet
+
+        function calculateValues() {
+            const annualConsumption = parseFloat(document.getElementById('annualConsumption').value);
+            const orderQuantity = parseFloat(document.getElementById('orderQuantity').value);
+            const safetyStock = parseFloat(document.getElementById('safetyStock').value);
+            const restockCost = parseFloat(document.getElementById('restockCost').value);
+            const valuePerItem = parseFloat(document.getElementById('valuePerItem').value);
+            const storageInterest = parseFloat(document.getElementById('storageInterest').value) / 100;
+            const productionDays = parseFloat(document.getElementById('productionDays').value);
+            const deliveryTime = parseFloat(document.getElementById('deliveryTime').value);
+
+            const dailyConsumption = annualConsumption / productionDays;
+            const storageCost = valuePerItem * storageInterest;
+            const orderPoint = dailyConsumption * deliveryTime + safetyStock;
+            const daysToNextOrder = (orderQuantity + safetyStock - orderPoint) / dailyConsumption;
+            const wilsonFormula = Math.sqrt((2 * annualConsumption * restockCost) / storageCost);
+
+            document.getElementById('storageCost').value = storageCost.toFixed(2);
+            document.getElementById('orderPoint').value = orderPoint.toFixed(2);
+            document.getElementById('daysToNextOrder').value = daysToNextOrder.toFixed(2);
+            document.getElementById('wilsonFormula').value = wilsonFormula.toFixed(2);
+
+            // Uppdatera diagrammet
+            updateInventoryChart(dailyConsumption, orderPoint, safetyStock, productionDays, orderQuantity, deliveryTime);
+        }
+
+        function updateInventoryChart(dailyConsumption, orderPoint, safetyStock, productionDays, orderQuantity, deliveryTime) {
+            const ctx = document.getElementById('inventoryChart').getContext('2d');
+            const days = [];
+            const inventory = [];
+            let currentStock = safetyStock + orderQuantity;
+            let orderPlacedDay = -1;
+
+            for (let day = 0; day <= productionDays; day++) {
+                days.push(day);
+                currentStock -= dailyConsumption;
+
+                if (currentStock <= orderPoint && orderPlacedDay === -1) {
+                    orderPlacedDay = day + deliveryTime;
+                }
+
+                if (orderPlacedDay !== -1 && day >= orderPlacedDay) {
+                    currentStock += orderQuantity;
+                    orderPlacedDay = -1;
+                }
+
+                inventory.push(currentStock);
+            }
+
+            if (inventoryChart) {
+                inventoryChart.destroy();
+            }
+
+            inventoryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Lagersaldo',
+                        data: inventory,
+                        borderColor: 'rgba(75, 192, 192, 1)',
+                        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                        fill: true
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Dagar'
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Lagersaldo'
+                            },
+                            min: 0
+                        }
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
